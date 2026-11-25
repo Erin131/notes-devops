@@ -9,7 +9,7 @@
 <body class="bg-light">
 <nav class="navbar navbar-dark {{ nav_class }} mb-4">
   <div class="container">
-    <a class="navbar-brand" href="{{ url_for('index') }}">Notes App
+    <a class="navbar-brand" href="{{ url_for('index') }}">My Notes
       {% if app_color != 'local' %}<span class="badge bg-light text-dark ms-2">{{ app_color }}</span>{% endif %}
     </a>
     {% if current_user.is_authenticated %}
