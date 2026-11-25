@@ -1,0 +1,27 @@
+# A PersistentVolume (disk on the node) and a claim that binds to it.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: notes-postgres-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual
+  hostPath:
+    path: /mnt/data/notes-postgres
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: notes
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: manual
+  volumeName: notes-postgres-pv
+  resources:
+    requests:
+      storage: 1Gi

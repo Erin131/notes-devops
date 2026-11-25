@@ -1,0 +1,12 @@
+.git
+.venv
+**/__pycache__
+app/tests
+*.md
+docs
+k8s
+ansible
+terraform
+jenkins
+monitoring
+fluentd

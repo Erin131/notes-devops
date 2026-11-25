@@ -1,0 +1,30 @@
+---
+- name: Install Docker
+  hosts: devops
+  become: true
+  tasks:
+    - name: Install Docker packages
+      ansible.builtin.apt:
+        name: [docker.io, docker-compose-v2]
+        state: present
+        update_cache: true
+
+    - name: Make sure Docker is running and starts on boot
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Let the login user run docker without sudo
+      ansible.builtin.user:
+        name: "{{ ansible_env.SUDO_USER | default(ansible_user_id) }}"
+        groups: docker
+        append: true
+
+    - name: Show Docker version
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - ansible.builtin.debug:
+        msg: "{{ docker_version.stdout }}"

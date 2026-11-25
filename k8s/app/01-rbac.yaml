@@ -1,0 +1,41 @@
+# The app runs with its own ServiceAccount that has NO permissions on the cluster API.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: notes-app
+  namespace: notes
+automountServiceAccountToken: false
+---
+# Read-only role for people/tools that only need to look at the app.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: notes-viewer
+  namespace: notes
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "services", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: notes-viewer
+  namespace: notes
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: notes-viewer-binding
+  namespace: notes
+subjects:
+  - kind: ServiceAccount
+    name: notes-viewer
+    namespace: notes
+roleRef:
+  kind: Role
+  name: notes-viewer
+  apiGroup: rbac.authorization.k8s.io

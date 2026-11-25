@@ -1,0 +1,35 @@
+---
+# Deploys the app with Docker Compose, and (optionally) to Kubernetes.
+#   ansible-playbook playbooks/03-deploy-app.yml
+#   add  -e deploy_k8s=true  to also apply the Kubernetes manifests
+- name: Deploy the Notes app
+  hosts: devops
+  vars_files:
+    - ../group_vars_all.yml
+  vars:
+    deploy_k8s: false
+  tasks:
+    - name: Build and start the containers
+      ansible.builtin.command: docker compose up -d --build
+      args:
+        chdir: "{{ repo_path }}"
+      environment:
+        POSTGRES_PASSWORD: "{{ postgres_password }}"
+        SECRET_KEY: "{{ secret_key }}"
+      changed_when: true
+
+    - name: Wait until the app answers
+      ansible.builtin.uri:
+        url: "http://localhost:{{ app_port }}/healthz"
+        status_code: 200
+      register: health
+      retries: 20
+      delay: 3
+      until: health.status == 200
+
+    - name: Apply Kubernetes manifests
+      ansible.builtin.command: kubectl apply -f k8s/app
+      args:
+        chdir: "{{ repo_path }}"
+      when: deploy_k8s | bool
+      changed_when: true

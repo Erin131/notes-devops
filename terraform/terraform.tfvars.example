@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars and edit
+# docker_host = "npipe:////.//pipe//docker_engine"   # <- uncomment on Windows (PowerShell/CMD)
+db_password = "change-me"
+secret_key  = "change-me-to-a-long-random-string"

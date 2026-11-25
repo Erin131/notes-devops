@@ -1,0 +1,74 @@
+# Create the dashboard ConfigMap first (see README):
+#   kubectl create configmap grafana-dashboards -n monitoring --from-file=monitoring/grafana/dashboards/notes-k8s.json
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning
+  namespace: monitoring
+data:
+  datasource.yml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        uid: prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus:9090
+        isDefault: true
+  dashboards.yml: |
+    apiVersion: 1
+    providers:
+      - name: notes
+        folder: Notes App
+        type: file
+        options:
+          path: /var/lib/grafana/dashboards
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: grafana}
+  template:
+    metadata:
+      labels: {app: grafana}
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.4.2
+          ports:
+            - containerPort: 3000
+          env:
+            - {name: GF_SECURITY_ADMIN_USER, value: admin}
+            - {name: GF_SECURITY_ADMIN_PASSWORD, value: admin}
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 400Mi}
+          volumeMounts:
+            - {name: provisioning-ds, mountPath: /etc/grafana/provisioning/datasources/datasource.yml, subPath: datasource.yml}
+            - {name: provisioning-db, mountPath: /etc/grafana/provisioning/dashboards/dashboards.yml, subPath: dashboards.yml}
+            - {name: dashboards, mountPath: /var/lib/grafana/dashboards}
+      volumes:
+        - name: provisioning-ds
+          configMap: {name: grafana-provisioning}
+        - name: provisioning-db
+          configMap: {name: grafana-provisioning}
+        - name: dashboards
+          configMap: {name: grafana-dashboards}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  type: NodePort
+  selector: {app: grafana}
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 30300

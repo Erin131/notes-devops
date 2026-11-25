@@ -1,0 +1,33 @@
+---
+# Configuration management: users, folders, config file, firewall-free basics.
+- name: Configure the application host
+  hosts: devops
+  become: true
+  vars_files:
+    - ../group_vars_all.yml
+  tasks:
+    - name: Create a dedicated system user for the app
+      ansible.builtin.user:
+        name: "{{ app_user }}"
+        system: true
+        shell: /usr/sbin/nologin
+        create_home: false
+
+    - name: Create the application directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ app_user }}"
+        mode: "0750"
+
+    - name: Write the environment file from a template (secrets stay out of Git)
+      ansible.builtin.template:
+        src: ../templates/app.env.j2
+        dest: "{{ app_dir }}/app.env"
+        owner: "{{ app_user }}"
+        mode: "0600"
+
+    - name: Make sure Docker is enabled on boot
+      ansible.builtin.service:
+        name: docker
+        enabled: true

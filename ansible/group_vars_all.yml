@@ -1,0 +1,10 @@
+# Shared variables - used with: ansible-playbook playbooks/xxx.yml -e @group_vars_all.yml
+app_user: notesapp
+app_dir: /opt/notes-app
+repo_path: "{{ playbook_dir }}/../.."
+postgres_user: notes
+postgres_db: notes
+postgres_password: "{{ lookup('env', 'POSTGRES_PASSWORD') | default('notespass', true) }}"
+secret_key: "{{ lookup('env', 'SECRET_KEY') | default('dev-only-change-me', true) }}"
+app_port: 5000
+minikube_version: latest

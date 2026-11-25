@@ -1,0 +1,55 @@
+# Use together with the main file:
+#   docker compose -f docker-compose.yml -f docker-compose.logging.yml up -d --build
+# (Needs about 2 GB of free RAM for Elasticsearch + Kibana.)
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    restart: unless-stopped
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  fluentd:
+    build: ./fluentd
+    restart: unless-stopped
+    volumes:
+      - ./fluentd/fluent.conf:/fluentd/etc/fluent.conf:ro
+    ports:
+      - "24224:24224"
+    depends_on:
+      - elasticsearch
+
+  # Send the app's and database's container logs to Fluentd
+  app:
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: docker.notes-app
+
+  db:
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: localhost:24224
+        fluentd-async: "true"
+        tag: docker.notes-db
+
+volumes:
+  esdata:

@@ -1,0 +1,46 @@
+---
+# Installs kubectl and minikube (a single-node Kubernetes cluster for labs).
+- name: Install Kubernetes tools
+  hosts: devops
+  become: true
+  tasks:
+    - name: Install prerequisites
+      ansible.builtin.apt:
+        name: [curl, ca-certificates, apt-transport-https, gnupg, conntrack]
+        state: present
+        update_cache: true
+
+    - name: Add the Kubernetes apt key
+      ansible.builtin.shell: |
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      args:
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+    - name: Add the Kubernetes apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /"
+        filename: kubernetes
+        state: present
+
+    - name: Install kubectl
+      ansible.builtin.apt:
+        name: kubectl
+        state: present
+        update_cache: true
+
+    - name: Download minikube
+      ansible.builtin.get_url:
+        url: https://storage.googleapis.com/minikube/releases/{{ minikube_version }}/minikube-linux-amd64
+        dest: /usr/local/bin/minikube
+        mode: "0755"
+
+    - name: Show versions
+      ansible.builtin.command: "{{ item }}"
+      loop:
+        - kubectl version --client
+        - minikube version
+      register: versions
+      changed_when: false
+
+    - ansible.builtin.debug:
+        msg: "{{ versions.results | map(attribute='stdout') | list }}"

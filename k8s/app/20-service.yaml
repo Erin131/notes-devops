@@ -1,0 +1,16 @@
+# Blue-Green switch: change "version" below to blue or green.
+# (scripts/switch-bluegreen.sh does this for you.)
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes-app
+  namespace: notes
+spec:
+  type: NodePort
+  selector:
+    app: notes-app
+    version: blue
+  ports:
+    - port: 80
+      targetPort: 5000
+      nodePort: 30080

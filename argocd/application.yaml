@@ -1,0 +1,22 @@
+# GitOps: ArgoCD watches the k8s/app folder of your GitHub repo and keeps the
+# cluster identical to it. CHANGE repoURL to your own repository.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: notes-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Erin131/notes-devops.git
+    targetRevision: main
+    path: k8s/app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: notes
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
